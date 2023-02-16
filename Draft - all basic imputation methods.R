@@ -142,3 +142,18 @@ head(iris.mis)
 
 ##### Method 4: KNN
 # https://www.youtube.com/watch?v=u8XvfhBdbMw 
+
+#########################   KLADD   ###########################################
+
+# Data preprocessing
+for (i in 1:ncol(dat))
+  if(sapply(dat, is.numeric)[i]==TRUE){
+    print("Num")
+  } else if (sapply(dat, is.character)[i]==TRUE) {
+    print("Cat")
+  } 
+} 
+
+dat %<>% mutate(across(where(is.character),as.factor))
+str(dat)
+
