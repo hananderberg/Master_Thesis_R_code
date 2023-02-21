@@ -74,8 +74,7 @@ col_names <- colnames(dat.norm.mis)[cat_cols]
 ####################  3. Impute using kNN  ####################
 
 ## Impute missing values.
-dat.complete.norm <- kNN(dat.norm.mis, k = 10)
-dat.complete.norm <- dat.norm.imp[,1:ncol(dat.norm.mis)]
+dat.complete.norm <- kNN(dat.norm.mis, k = 10, imp_var = FALSE)
 
 sapply(dat.complete.norm, function(x) sum(is.na(x)))
 head(dat.complete.norm)
