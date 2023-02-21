@@ -86,6 +86,42 @@ imputed = mice(dat, method=meth, m=5)
 imputed <- complete(imputed)
 sapply(imputed, function(x) sum(is.na(x)))
 
+### DRAFT from MICE file
+
+### KLADD
+
+##### Normalize the numerical columns between -1 and 1
+# dat_norm <- dat %>%
+#   mutate_at(num_cols, scale) %>%
+#   mutate_at(num_cols, ~ 2 * (. - min(.)) / (max(.) - min(.)) - 1)
+# dat_norm %>% mutate_if(is.matrix,as.vector)
+# summary(dat_norm)
+
+
+#Manually add if we have an ordered column with > 2 factors 
+#col <- fmatch("Fake",names(dat))
+#col
+# meth[col] <- "polr"
+
+### TEST ###
+x1<-c(1:10)
+x2<-c(1:2)
+x3<-c(1:5)
+df1<-data.frame(x1,x2,x3)
+df1
+
+# Sum
+a =sum(df1[,1])
+b = sum (df1[,2])
+c = sum(df1[,3])
+to = a+b+c
+tot = to/30
+tot
+
+mean_squared_diff <- mean(as.matrix(df1))
+mean_squared_diff
+
+
 ############# Method 2 using "missForest"##########
 
 ## Nonparametric missing value imputation on mixed-type data:
