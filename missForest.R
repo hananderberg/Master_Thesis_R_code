@@ -73,7 +73,7 @@ dat_num_norm_mis <- dat.norm.mis[ , num_cols]
 ####################  3. Impute using missForest  ####################
 
 ## Impute missing values. Use 'verbose' to see what happens between iterations:
-dat.norm.imp <- missForest(dat.norm.mis, xtrue = dat_norm, verbose = TRUE)
+dat.norm.imp <- missForest(dat.norm.mis, maxiter=20,xtrue = dat_norm, verbose = TRUE)
 
 ## Here are the final results
 dat.complete.norm <- dat.norm.imp$ximp
@@ -121,3 +121,4 @@ rmse_full_mf <- sqrt(mean_squared_diff)
 rmse_full_mf
 
 cat("missForest: "," RMSE numerical: ",rmse_num_mf, " RMSE categorical: ", rmse_cat_mf, " RMSE: ", rmse_full_mf)
+

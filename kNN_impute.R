@@ -1,14 +1,13 @@
-####################  0. Intro  ####################
+####################  1. Intro  ####################
 
 # Load packages
-library(mice)
-library(missForest)
 library(dplyr)
 library(fastmatch)
 library(Metrics)
 library(mltools)
 library(data.table)
 library(magrittr)
+library(VIM)
 
 
 # Load data
@@ -17,7 +16,6 @@ original_dat <- dat
 
 # Variables
 missingness = 0.2 #TBU
-maxit_MICE = 10
 
 ####################  1. Data pre-processing  ####################
 str(dat)
@@ -56,21 +54,6 @@ dat_num_norm <- dat_norm[ , num_cols]
 head(dat_cat_norm)
 head(dat_num_norm)
 
-# Create a vector with default methods
-meth <- c()
-for (i in 1:ncol(dat_norm)){
-  if (sapply(dat_norm, is.numeric)[i]==TRUE){ #Numeric --> pmm
-    meth <- append(meth,"pmm")
-  } else if (sapply(dat_norm, is.factor)[i]==TRUE && nlevels(dat_norm[,i])==2){ #binary --> logreg
-    meth <- append(meth,"logreg")
-  } else {
-    meth <- append(meth,"polyreg")
-  }
-}
-
-# Check method vector 
-meth 
-
 ####################  2. Introduce missingness  ####################
 
 set.seed(1)
@@ -85,10 +68,15 @@ sapply(dat.norm.mis, function(x) sum(is.na(x)))
 dat_cat_norm_mis <- dat.norm.mis[ , cat_cols]
 dat_num_norm_mis <- dat.norm.mis[ , num_cols]
 
-####################  3. Impute using MICE  ####################
+#Colnames 
+col_names <- colnames(dat.norm.mis)[cat_cols]
 
-imputed = mice(dat.norm.mis, method=meth, maxit = maxit_MICE, m=ncol(dat.norm.mis), seed = 500)
-dat.complete.norm <- complete(imputed)
+####################  3. Impute using kNN  ####################
+
+## Impute missing values.
+dat.complete.norm <- kNN(dat.norm.mis, k = 10)
+dat.complete.norm <- dat.norm.imp[,1:ncol(dat.norm.mis)]
+
 sapply(dat.complete.norm, function(x) sum(is.na(x)))
 head(dat.complete.norm)
 
@@ -99,13 +87,14 @@ dat_num_complete_norm <- dat.complete.norm[ , num_cols]
 head(dat_cat_complete_norm)
 head(dat_num_complete_norm)
 
+
 ####################  4. Calculate RMSE  ####################
 
 ## Numerical
 squared_diff_num <- (dat_num_complete_norm - dat_num_norm) ^ 2 #Values
 mean_squared_diff_num <- mean(as.matrix(squared_diff_num))
-rmse_num_MICE <- sqrt(mean_squared_diff_num)
-rmse_num_MICE
+rmse_num_knn <- sqrt(mean_squared_diff_num)
+rmse_num_knn
 
 ## Categorical
 dat_cat_complete_norm_oh <- one_hot(as.data.table(dat_cat_complete_norm))
@@ -116,8 +105,8 @@ head(dat_cat_norm_oh)
 
 squared_diff_cat <- (dat_cat_complete_norm_oh - dat_cat_norm_oh) ^ 2 #Values
 mean_squared_diff_cat <- mean(as.matrix(squared_diff_cat))
-rmse_cat_MICE <- sqrt(mean_squared_diff_cat)
-rmse_cat_MICE
+rmse_cat_knn <- sqrt(mean_squared_diff_cat)
+rmse_cat_knn
 
 ## Both numerical and categorical
 dat_norm_oh <- data.frame(num_norm,dat_cat_norm_oh)
@@ -127,8 +116,7 @@ head(dat_complete_norm_oh)
 
 squared_diff <- (dat_complete_norm_oh - dat_norm_oh) ^ 2 #Values
 mean_squared_diff <- mean(as.matrix(squared_diff))
-rmse_full_MICE <- sqrt(mean_squared_diff)
-rmse_full_MICE
+rmse_full_knn <- sqrt(mean_squared_diff)
+rmse_full_knn
 
-cat("MICE: "," RMSE numerical: ",rmse_num_MICE, " RMSE categorical: ", rmse_cat_MICE, " RMSE: ", rmse_full_MICE)
-
+cat("kNN: "," RMSE numerical: ",rmse_num_knn, " RMSE categorical: ", rmse_cat_knn, " RMSE: ", rmse_full_knn)
