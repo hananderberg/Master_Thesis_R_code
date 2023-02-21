@@ -1,14 +1,15 @@
 ####################  1. Intro  ####################
 
 # Load packages
-library(mice)
 library(missForest)
+library(mice)
 library(dplyr)
 library(fastmatch)
 library(Metrics)
 library(mltools)
 library(data.table)
 library(magrittr)
+library(imputeR)
 
 
 # Load data
@@ -70,3 +71,53 @@ dat_cat_norm_mis <- dat.norm.mis[ , cat_cols]
 dat_num_norm_mis <- dat.norm.mis[ , num_cols]
 
 ####################  3. Impute using missForest  ####################
+
+## Impute missing values. Use 'verbose' to see what happens between iterations:
+dat.norm.imp <- missForest(dat.norm.mis, xtrue = dat_norm, verbose = TRUE)
+
+## Here are the final results
+dat.complete.norm <- dat.norm.imp$ximp
+
+sapply(dat.complete.norm, function(x) sum(is.na(x)))
+head(dat.complete.norm)
+
+# Find numeric & categorical columns of complete data 
+dat_cat_complete_norm <- dat.complete.norm[ , cat_cols]
+dat_num_complete_norm <- dat.complete.norm[ , num_cols]
+
+head(dat_cat_complete_norm)
+head(dat_num_complete_norm)
+
+
+####################  4. Calculate RMSE  ####################
+
+## Numerical
+squared_diff_num <- (dat_num_complete_norm - dat_num_norm) ^ 2 #Values
+mean_squared_diff_num <- mean(as.matrix(squared_diff_num))
+rmse_num_mf <- sqrt(mean_squared_diff_num)
+rmse_num_mf
+
+## Categorical
+dat_cat_complete_norm_oh <- one_hot(as.data.table(dat_cat_complete_norm))
+dat_cat_norm_oh <- one_hot(as.data.table(dat_cat_norm))
+
+head(dat_cat_complete_norm_oh)
+head(dat_cat_norm_oh)
+
+squared_diff_cat <- (dat_cat_complete_norm_oh - dat_cat_norm_oh) ^ 2 #Values
+mean_squared_diff_cat <- mean(as.matrix(squared_diff_cat))
+rmse_cat_mf <- sqrt(mean_squared_diff_cat)
+rmse_cat_mf
+
+## Both numerical and categorical
+dat_norm_oh <- data.frame(num_norm,dat_cat_norm_oh)
+head(dat_norm_oh)
+dat_complete_norm_oh <- data.frame(dat_num_complete_norm,dat_cat_complete_norm_oh)
+head(dat_complete_norm_oh)
+
+squared_diff <- (dat_complete_norm_oh - dat_norm_oh) ^ 2 #Values
+mean_squared_diff <- mean(as.matrix(squared_diff))
+rmse_full_mf <- sqrt(mean_squared_diff)
+rmse_full_mf
+
+cat("missForest: "," RMSE numerical: ",rmse_num_mf, " RMSE categorical: ", rmse_cat_mf, " RMSE: ", rmse_full_mf)

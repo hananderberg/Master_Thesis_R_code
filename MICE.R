@@ -104,8 +104,8 @@ head(dat_num_complete_norm)
 ## Numerical
 squared_diff_num <- (dat_num_complete_norm - dat_num_norm) ^ 2 #Values
 mean_squared_diff_num <- mean(as.matrix(squared_diff_num))
-rmse_num <- sqrt(mean_squared_diff_num)
-rmse_num
+rmse_num_MICE <- sqrt(mean_squared_diff_num)
+rmse_num_MICE
 
 ## Categorical
 dat_cat_complete_norm_oh <- one_hot(as.data.table(dat_cat_complete_norm))
@@ -116,8 +116,8 @@ head(dat_cat_norm_oh)
 
 squared_diff_cat <- (dat_cat_complete_norm_oh - dat_cat_norm_oh) ^ 2 #Values
 mean_squared_diff_cat <- mean(as.matrix(squared_diff_cat))
-rmse_cat <- sqrt(mean_squared_diff_cat)
-rmse_cat
+rmse_cat_MICE <- sqrt(mean_squared_diff_cat)
+rmse_cat_MICE
 
 ## Both numerical and categorical
 dat_norm_oh <- data.frame(num_norm,dat_cat_norm_oh)
@@ -127,7 +127,7 @@ head(dat_complete_norm_oh)
 
 squared_diff <- (dat_complete_norm_oh - dat_norm_oh) ^ 2 #Values
 mean_squared_diff <- mean(as.matrix(squared_diff))
-rmse_full <- sqrt(mean_squared_diff)
-rmse_full
+rmse_full_MICE <- sqrt(mean_squared_diff)
+rmse_full_MICE
 
-cat("RMSE numerical: ",rmse_num, " RMSE categorical: ", rmse_cat, " RMSE: ", rmse_full)
+cat("MICE: "," RMSE numerical: ",rmse_num_MICE, " RMSE categorical: ", rmse_cat_MICE, " RMSE: ", rmse_full_MICE)
