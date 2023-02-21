@@ -3,17 +3,13 @@
 # Load packages
 library(mice)
 library(missForest)
-# library(purrr)
-# library(tibble) 
-#library(tidyverse)
-#library(magrittr)
 library(dplyr)
-# library(imputeR)
-# library(missMethods)
 library(fastmatch)
 library(Metrics)
 library(mltools)
 library(data.table)
+library(magrittr)
+
 
 # Load data
 dat <- read.csv(url("http://goo.gl/19NKXV"), header=TRUE, sep=",") 
