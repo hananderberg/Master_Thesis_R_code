@@ -10,10 +10,11 @@ library(mltools)
 library(data.table)
 library(magrittr)
 
-
-# Load data
-dat <- read.csv(url("http://goo.gl/19NKXV"), header=TRUE, sep=",") 
-original_dat <- dat
+# Load
+library(readr)
+dat_tibble <- read_csv('news.csv')
+dat <- as.data.frame(dat_tibble)
+head(dat)
 
 # Variables
 missingness = 0.2 #TBU

@@ -4,7 +4,6 @@
 library(missForest)
 library(mice)
 library(dplyr)
-library(fastmatch)
 library(Metrics)
 library(mltools)
 library(data.table)
@@ -14,12 +13,14 @@ library(imputeR)
 
 # Load data
 dat <- read.csv(url("http://goo.gl/19NKXV"), header=TRUE, sep=",") 
-original_dat <- dat
 
 # Variables
 missingness = 0.2 #TBU
 
-####################  1. Data pre-processing  ####################
+####################  1a. Data pre-processing - adapt data sets ####################
+
+
+####################  1b. Data pre-processing - normalize  ####################
 str(dat)
 
 ## Change categorical variables to factors 
@@ -37,7 +38,7 @@ min_max_norm <- function(x) {
   2*(x - min(x)) / (max(x) - min(x)) - 1
 }
 
-#apply  normalization to numerical columns in data set
+#apply normalization to numerical columns in data set
 num_norm <- as.data.frame(lapply(dat[ , num_cols], min_max_norm))
 summary(num_norm)
 
@@ -73,7 +74,8 @@ dat_num_norm_mis <- dat.norm.mis[ , num_cols]
 ####################  3. Impute using missForest  ####################
 
 ## Impute missing values. Use 'verbose' to see what happens between iterations:
-dat.norm.imp <- missForest(dat.norm.mis, maxiter=20,xtrue = dat_norm, verbose = TRUE)
+dat.norm.imp <- missForest(dat.norm.mis, maxiter=5,xtrue = dat_norm, verbose = TRUE)
+dat.norm.imp
 
 ## Here are the final results
 dat.complete.norm <- dat.norm.imp$ximp
@@ -121,4 +123,19 @@ rmse_full_mf <- sqrt(mean_squared_diff)
 rmse_full_mf
 
 cat("missForest: "," RMSE numerical: ",rmse_num_mf, " RMSE categorical: ", rmse_cat_mf, " RMSE: ", rmse_full_mf)
+
+#### TEST ##
+
+# both
+squared_diff <- (dat.complete.norm - dat_norm) ^ 2 #Values
+squared_diff
+mean_squared_diff <- mean(as.matrix(squared_diff))
+mean_squared_diff
+rmse_full_mf <- sqrt(mean_squared_diff)
+rmse_full_mf
+
+mis <- is.na(dat.norm.mis)
+rmse <- sqrt(mean((dat.complete.norm[mis] - dat_norm[mis])^{2}) / stats::var(dat_norm[mis]))
+rmse
+
 
