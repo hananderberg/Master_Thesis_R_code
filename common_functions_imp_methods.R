@@ -51,6 +51,10 @@ if(data == "letter"){
 }
 str(dat)
 
+## Download credit missing data
+dat.norm.mis <- prodNA(dat_norm, noNA = missingness)
+summary(dat.norm.mis)
+
 
 ####################  1b. Data pre-processing - normalize  ####################
 
@@ -60,7 +64,7 @@ num_cols <- which(sapply(dat, is.numeric))
 
 #Define normalization function
 normalize <- function(x) {
-  return((x - min(x)) / (max(x) -min(x))
+  return((x - min(x)) / (max(x) -min(x)))
 }
 
 #apply normalization to numerical columns in data set
@@ -95,15 +99,10 @@ sapply(dat.norm.mis, function(x) sum(is.na(x)))
 dat_cat_norm_mis <- dat.norm.mis[ , cat_cols]
 dat_num_norm_mis <- dat.norm.mis[ , num_cols]
 
-####################  3. Impute using missForest  ####################
+####################  3. Impute using MICE  ####################
 
-## Impute missing values. Use 'verbose' to see what happens between iterations:
-dat.norm.imp <- missForest(dat.norm.mis, maxiter=3,xtrue = dat_norm, verbose = TRUE)
-
-dat.norm.imp
-
-## Here are the final results
-dat.complete.norm <- dat.norm.imp$ximp
+imputed = mice(dat.norm.mis, method=meth, maxit = maxit_MICE, m=ncol(dat.norm.mis), seed = 500)
+dat.complete.norm <- complete(imputed)
 
 sapply(dat.complete.norm, function(x) sum(is.na(x)))
 head(dat.complete.norm)

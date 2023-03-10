@@ -1,135 +1,72 @@
-####################  0. Intro  ####################
+
+####################  0. Load packages and define variables needed ####################
+
+# Variables
+missingness = 0.1
+
+# Chosen data set: Choose from "letter", "credit", "news", "mushroom", "bank"
+data_name <- "credit"
 
 # Load packages
-library(mice)
 library(missForest)
+library(mice)
 library(dplyr)
-library(fastmatch)
 library(Metrics)
 library(mltools)
 library(data.table)
 library(magrittr)
+library(imputeR)
 
-# Load
-library(readr)
-dat_tibble <- read_csv('news.csv')
-dat <- as.data.frame(dat_tibble)
-head(dat)
+####################  1a. Data load and pre-processing - adapt data sets ####################
+missingness_percentage = missingness*100
 
-# Variables
-missingness = 0.2 #TBU
-maxit_MICE = 10
+### Functions 
 
-####################  1. Data pre-processing  ####################
-str(dat)
-
-## Change categorical variables to factors 
-dat <- dat %<>% mutate(across(where(is.character),as.factor))
-
-# Check if correct 
-str(dat)
-
-# Find categorical and numerical columns in data set
-cat_cols <- which(sapply(dat, is.factor))
-num_cols <- which(sapply(dat, is.numeric))
-
-#Define normalization function
-min_max_norm <- function(x) {
-  2*(x - min(x)) / (max(x) - min(x)) - 1
+# Load train data
+load_train_data <- function(data_name, missingness_percentage) {
+  file_name_full_train <- paste0("/Users/sofiawadell/Documents/MasterThesis/R_v2/Master_Thesis_R_code/factor_train_data/factor_encode_", data_name, "_train.csv")
+  train_data_x <- read.csv(file_name_full_train,header=TRUE, sep=",")
+  file_name_miss_train <- paste0("/Users/sofiawadell/Documents/MasterThesis/R_v2/Master_Thesis_R_code/factor_train_data/factor_encode_", data_name, "_train_",missingness_percentage,".csv")
+  train_miss_data_x <- read.csv(file_name_miss_train,header=TRUE, sep=",")
+  return(list(full=train_data_x,miss=train_miss_data_x))
 }
 
-#apply  normalization to numerical columns in data set
-num_norm <- as.data.frame(lapply(dat[ , num_cols], min_max_norm))
-summary(num_norm)
-
-# New dataset --> dat_norm
-dat_cat <- dat[ , cat_cols]
-dat_norm <- data.frame(num_norm,dat_cat)
-summary(dat_norm)                   
-
-# Extract categorical & numerical data to be able to compute separate RMSEs
-cat_cols <- which(sapply(dat_norm, is.factor))
-num_cols <- which(sapply(dat_norm, is.numeric))
-
-dat_cat_norm <- dat_norm[ , cat_cols]
-dat_num_norm <- dat_norm[ , num_cols]
-
-head(dat_cat_norm)
-head(dat_num_norm)
-
-# Create a vector with default methods
-meth <- c()
-for (i in 1:ncol(dat_norm)){
-  if (sapply(dat_norm, is.numeric)[i]==TRUE){ #Numeric --> pmm
-    meth <- append(meth,"pmm")
-  } else if (sapply(dat_norm, is.factor)[i]==TRUE && nlevels(dat_norm[,i])==2){ #binary --> logreg
-    meth <- append(meth,"logreg")
-  } else {
-    meth <- append(meth,"polyreg")
-  }
+# Load test data
+load_test_data <- function(data_name, missingness_percentage) {
+  file_name_full_test <- paste0("/Users/sofiawadell/Documents/MasterThesis/R_v2/Master_Thesis_R_code/factor_test_data/factor_encode_", data_name, "_test.csv")
+  test_data_x <- read.csv(file_name_full_test,header=TRUE, sep=",")
+  file_name_miss_test <- paste0("/Users/sofiawadell/Documents/MasterThesis/R_v2/Master_Thesis_R_code/factor_test_data/factor_encode_", data_name, "_test_",missingness_percentage,".csv")
+  test_miss_data_x <- read.csv(file_name_miss_test,header=TRUE, sep=",")
+  return(list(full=test_data_x,miss=test_miss_data_x))
 }
 
-# Check method vector 
-meth 
+### Commands
 
-####################  2. Introduce missingness  ####################
+# Load train data
+train_data <- load_train_data(data_name,missingness_percentage)
+train_data_x <- train_data$full
+train_miss_data_x <- train_data$miss
+head(train_miss_data_x)
+str(train_miss_data_x)
 
-set.seed(1)
-dat.norm.mis <- prodNA(dat_norm, noNA = missingness)
-summary(dat.norm.mis)
+# Load test data
+test_data <- load_test_data(data_name,missingness_percentage)
+test_data_x <- test_data$full
+test_miss_data_x <- test_data$miss
+head(test_miss_data_x)
 
-# View missing data & check ratio 
-head(dat.norm.mis)
-sapply(dat.norm.mis, function(x) sum(is.na(x)))
+### [TBU] Normalize all data sets
 
-#Cat and num columns of missing data
-dat_cat_norm_mis <- dat.norm.mis[ , cat_cols]
-dat_num_norm_mis <- dat.norm.mis[ , num_cols]
+### Factor encode categorical variables 
+# Train
+encoded_cols_train <- grep("encoded$", names(train_data_x), value = TRUE)
+train_data_x[encoded_cols_train] <- lapply(train_data_x[encoded_cols_train], as.factor)
+train_miss_data_x[encoded_cols_train] <- lapply(train_miss_data_x[encoded_cols_train], as.factor)
 
-####################  3. Impute using MICE  ####################
+# Test
+encoded_cols_test <- grep("encoded$", names(test_data_x), value = TRUE)
+test_data_x[encoded_cols_train] <- lapply(test_data_x[encoded_cols_train], as.factor)
+test_miss_data_x[encoded_cols_train] <- lapply(test_miss_data_x[encoded_cols_train], as.factor)
 
-imputed = mice(dat.norm.mis, method=meth, maxit = maxit_MICE, m=ncol(dat.norm.mis), seed = 500)
-dat.complete.norm <- complete(imputed)
-sapply(dat.complete.norm, function(x) sum(is.na(x)))
-head(dat.complete.norm)
 
-# Find numeric & categorical columns of complete data 
-dat_cat_complete_norm <- dat.complete.norm[ , cat_cols]
-dat_num_complete_norm <- dat.complete.norm[ , num_cols]
-
-head(dat_cat_complete_norm)
-head(dat_num_complete_norm)
-
-####################  4. Calculate RMSE  ####################
-
-## Numerical
-squared_diff_num <- (dat_num_complete_norm - dat_num_norm) ^ 2 #Values
-mean_squared_diff_num <- mean(as.matrix(squared_diff_num))
-rmse_num_MICE <- sqrt(mean_squared_diff_num)
-rmse_num_MICE
-
-## Categorical
-dat_cat_complete_norm_oh <- one_hot(as.data.table(dat_cat_complete_norm))
-dat_cat_norm_oh <- one_hot(as.data.table(dat_cat_norm))
-
-head(dat_cat_complete_norm_oh)
-head(dat_cat_norm_oh)
-
-squared_diff_cat <- (dat_cat_complete_norm_oh - dat_cat_norm_oh) ^ 2 #Values
-mean_squared_diff_cat <- mean(as.matrix(squared_diff_cat))
-rmse_cat_MICE <- sqrt(mean_squared_diff_cat)
-rmse_cat_MICE
-
-## Both numerical and categorical
-dat_norm_oh <- data.frame(num_norm,dat_cat_norm_oh)
-head(dat_norm_oh)
-dat_complete_norm_oh <- data.frame(dat_num_complete_norm,dat_cat_complete_norm_oh)
-head(dat_complete_norm_oh)
-
-squared_diff <- (dat_complete_norm_oh - dat_norm_oh) ^ 2 #Values
-mean_squared_diff <- mean(as.matrix(squared_diff))
-rmse_full_MICE <- sqrt(mean_squared_diff)
-rmse_full_MICE
-
-cat("MICE: "," RMSE numerical: ",rmse_num_MICE, " RMSE categorical: ", rmse_cat_MICE, " RMSE: ", rmse_full_MICE)
 
