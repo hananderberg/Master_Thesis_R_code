@@ -1,11 +1,11 @@
 
-####################  0. Load data and define variables needed ####################
+####################  0. Load packages and define variables needed ####################
 
 # Variables
+missingness = 0.1
 
-# Chosen data set: Choose from "letter", "credit", "news", "mushrooms", "bank"
-data_name <- "credit"
-
+# Chosen data set: Choose from "letter", "credit", "news", "mushroom", "bank"
+data_name <- "mushroom"
 
 # Load packages
 library(missForest)
@@ -16,47 +16,89 @@ library(mltools)
 library(data.table)
 library(magrittr)
 library(imputeR)
+source("https://raw.githubusercontent.com/prockenschaub/Misc/master/R/mice.reuse/mice.reuse.R")
 
-####################  1a. Data load and pre-processing - adapt data sets ####################
+# Load data
+dat <- read.csv(url("http://goo.gl/19NKXV"), header=TRUE, sep=",") 
+original_dat <- dat
 
-# Test
-load_test_data <- function(data_name, missingness_percent) {
-  file_name_full_test <- paste0("/Users/sofiawadell/Documents/MasterThesis/R_v2/Master_Thesis_R_code/factor_test_data/factor_encode_", data_name, "_test.csv")
-  test_data_x <- read.csv(file_name_full_test,header=TRUE, sep=",")
-  file_name_miss_test <- paste0("/Users/sofiawadell/Documents/MasterThesis/R_v2/Master_Thesis_R_code/factor_test_data/factor_encode_", data_name, "_test_",missingness_percent,".csv")
-  test_miss_data_x <- read.csv(file_name_miss_test,header=TRUE, sep=",")
-  return(list(full=test_data_x,miss=test_miss_data_x))
+# Variables
+missingness = 0.2 #TBU
+
+####################  1. Data pre-processing  ####################
+str(dat)
+
+## Change categorical variables to factors 
+dat <- dat %<>% mutate(across(where(is.character),as.factor))
+
+# Check if correct 
+str(dat)
+
+# Find categorical and numerical columns in data set
+cat_cols <- which(sapply(dat, is.factor))
+num_cols <- which(sapply(dat, is.numeric))
+
+#Define normalization function
+min_max_norm <- function(x) {
+  2*(x - min(x)) / (max(x) - min(x)) - 1
 }
 
-# Test test
-data <- load_test_data(data_name,"50")
-test_data_x <- data$full
-test_miss_data_x <- data$miss
-head(test_miss_data_x)
+#apply  normalization to numerical columns in data set
+num_norm <- as.data.frame(lapply(dat[ , num_cols], min_max_norm))
+summary(num_norm)
 
-# Train
-load_train_data <- function(data_name, missingness_percent) {
-  file_name_full_train <- paste0("/Users/sofiawadell/Documents/MasterThesis/R_v2/Master_Thesis_R_code/factor_train_data/factor_encode_", data_name, "_train.csv")
-  train_data_x <- read.csv(file_name_full_train,header=TRUE, sep=",")
-  file_name_miss_train <- paste0("/Users/sofiawadell/Documents/MasterThesis/R_v2/Master_Thesis_R_code/factor_train_data/factor_encode_", data_name, "_train_",missingness_percent,".csv")
-  train_miss_data_x <- read.csv(file_name_miss_train,header=TRUE, sep=",")
-  return(list(full=train_data_x,miss=train_miss_data_x))
-}
+# New dataset --> dat_norm
+dat_cat <- dat[ , cat_cols]
+dat_norm <- data.frame(num_norm,dat_cat)
+summary(dat_norm)                   
 
-# Test train 
-data <- load_train_data("credit","50")
-train_data_x <- data$full
-train_miss_data_x <- data$miss
-head(train_miss_data_x)
+# Extract categorical & numerical data to be able to compute separate RMSEs
+cat_cols <- which(sapply(dat_norm, is.factor))
+num_cols <- which(sapply(dat_norm, is.numeric))
+
+dat_cat_norm <- dat_norm[ , cat_cols]
+dat_num_norm <- dat_norm[ , num_cols]
+
+head(dat_cat_norm)
+head(dat_num_norm)
+
+####################  2. Introduce missingness  ################################
+
+set.seed(1)
+dat.norm.mis <- prodNA(dat_norm, noNA = missingness)
+summary(dat.norm.mis)
+
+# View missing data & check ratio 
+head(dat.norm.mis)
+sapply(dat.norm.mis, function(x) sum(is.na(x)))
+
+#Cat and num columns of missing data
+dat_cat_norm_mis <- dat.norm.mis[ , cat_cols]
+dat_num_norm_mis <- dat.norm.mis[ , num_cols]
+
+#Colnames 
+col_names <- colnames(dat.norm.mis)[cat_cols]
+
+# Split in training and testing data
+train_row = 200
+dat.norm.mis.train <- dat.norm.mis[1:train_row, ]
+dat.norm.mis.test <- dat.norm.mis[(train_row+1):nrow(dat.norm.mis), ]
+str(dat.norm.mis.test)
+
+####################  3. Impute using MICE  ################################################################################
+imp.ignore <- mice(dat.norm.mis, ignore = c(rep(FALSE, 50), rep(TRUE, 200)), maxit = 5, m = ncol(dat.norm.mis.train), seed = 1)
+
+imp = mice(dat.norm.mis.train, m=ncol(dat.norm.mis.train), seed = 500)
+train <- complete(imp)
+sapply(train, function(x) sum(is.na(x)))
+head(train)
 
 
-# find column names ending with "encoded"
-encoded_cols <- grep("encoded$", names(credit_full), value = TRUE)
+test_imp <- mice.reuse(imp, dat.norm.mis.test, maxit = 1)
+head(test_imp)
 
-# set encoded columns as factors
-credit_full[encoded_cols] <- lapply(credit_full[encoded_cols], as.factor)
-str(credit_full)
+dat.complete.norm <- complete(test_imp)
+head(dat.complete.norm)
 
 
-imputed = mice(letter_10, maxit = 2, m=ncol(letter_10), seed = 500)
-dat.complete.norm <- complete(imputed)
+
