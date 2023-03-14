@@ -24,20 +24,20 @@ source("help_functions_mice.R")
 missingness_percentage = missingness*100
 
 # Load normalized train data
-train_data <- load_train_data(data_name,missingness_percentage)
-train_miss_data_x <- train_data$miss
+train_miss_data_x <- load_train_data(data_name,missingness_percentage)
 
 # Control
 head(train_miss_data_x)
 str(train_miss_data_x)
+summary(train_miss_data_x)
 
 # Load normalized test data
-test_data <- load_test_data(data_name,missingness_percentage)
-test_miss_data_x <- test_data$miss
+test_miss_data_x <- load_test_data(data_name,missingness_percentage)
 
 # Control
 head(test_miss_data_x)
 str(test_miss_data_x)
+summary(test_miss_data_x)
 
 ### Factor encode categorical variables 
 train_miss_data_x_encoded <- factor_encode(train_miss_data_x)
@@ -66,7 +66,6 @@ sapply(completed_dataset, function(x) sum(is.na(x)))
 head(completed_dataset)
 
 ####################  4. Save imputed data set  ####################
-
 # Extract data
 train_imp_data_x <- completed_dataset[1:nbr_of_training_rows, ]
 test_imp_data_x <- completed_dataset[(nbr_of_training_rows+1):nrow(completed_dataset), ]
