@@ -5,7 +5,10 @@
 missingness = 0.1
 
 # Chosen data set: Choose from "letter", "credit", "news", "mushroom", "bank"
-data_name <- "bank"
+data_name <- "mushroom"
+
+# Chose if ctgan data should be used. Choose from "", "50" and "100"
+ctgan <- "50"
 
 ####################  1. Data load and pre-processing - adapt data sets ####################
 
@@ -24,7 +27,14 @@ source("help_functions_mice.R")
 missingness_percentage = missingness*100
 
 # Load normalized train data
-train_miss_data_x <- load_train_data(data_name,missingness_percentage)
+if (ctgan ==""){
+  train_miss_data_x <- load_train_data(data_name, missingness_percentage)
+  print("CTGAN: None")
+} else {
+  train_miss_data_x <- load_train_data_ctgan(data_name, missingness_percentage, ctgan)
+  print("CTGAN:")
+  print(ctgan)
+}
 
 # Control
 head(train_miss_data_x)
@@ -33,7 +43,7 @@ summary(train_miss_data_x)
 sapply(train_miss_data_x, function(x) sum(is.na(x)))
 
 # Load normalized test data
-test_miss_data_x <- load_test_data(data_name,missingness_percentage)
+test_miss_data_x <- load_test_data(data_name, missingness_percentage)  
 
 # Control
 head(test_miss_data_x)
@@ -76,13 +86,28 @@ head(completed_dataset)
 train_imp_data_x <- completed_dataset[1:nbr_of_training_rows, ]
 test_imp_data_x <- completed_dataset[(nbr_of_training_rows+1):nrow(completed_dataset), ]
 
-# Save train data
-file_path <- paste0("/Users/sofiawadell/Documents/MasterThesis/R_v2/Master_Thesis_R_code/norm_imputed_mice_train_data/norm_imputed_mice_", data_name, "_train_", missingness_percentage, ".csv")
-write.csv(train_imp_data_x, file_path, row.names = FALSE)
+str(train_imp_data_x)
+str(test_imp_data_x)
 
-# Save test data
-file_path <- paste0("/Users/sofiawadell/Documents/MasterThesis/R_v2/Master_Thesis_R_code/norm_imputed_mice_test_data/norm_imputed_mice_", data_name, "_test_", missingness_percentage, ".csv")
-write.csv(test_imp_data_x, file_path, row.names = FALSE)
+# Save train data
+if (ctgan == ""){
+  file_path <- paste0("/Users/sofiawadell/Documents/MasterThesis/R_v2/Master_Thesis_R_code/norm_factor_imputed_mice_train_data/norm_factor_imputed_mice_", data_name, "_train_", missingness_percentage, ".csv")
+  write.csv(train_imp_data_x, file_path, row.names = FALSE)
+  
+  # Save test data
+  file_path <- paste0("/Users/sofiawadell/Documents/MasterThesis/R_v2/Master_Thesis_R_code/norm_factor_imputed_mice_test_data/norm_factor_imputed_mice_", data_name, "_test_", missingness_percentage, ".csv")
+  write.csv(test_imp_data_x, file_path, row.names = FALSE)
+} else {
+  file_path <- paste0("/Users/sofiawadell/Documents/MasterThesis/R_v2/Master_Thesis_R_code/norm_factor_imputed_mice_train_data_ctgan", ctgan, "/norm_factor_imputed_mice_", data_name, "_train_", missingness_percentage, "_ctgan", ctgan, ".csv")
+  write.csv(train_imp_data_x, file_path, row.names = FALSE)
+  
+  # Save test data
+  file_path <- paste0("/Users/sofiawadell/Documents/MasterThesis/R_v2/Master_Thesis_R_code/norm_factor_imputed_mice_test_data_ctgan", ctgan, "/norm_factor_imputed_mice_", data_name, "_test_", missingness_percentage, "_ctgan", ctgan, ".csv")
+  write.csv(test_imp_data_x, file_path, row.names = FALSE)
+}
+
+
+
 
 
 
