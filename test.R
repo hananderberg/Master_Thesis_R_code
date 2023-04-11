@@ -6,8 +6,8 @@ load_train_data <- function(data_name, missingness_percentage,ctgan) {
 }
 
 data_name = "mushroom"
-missingness_percentage = 30
-ctgan = "50"
+missingness_percentage = 10
+ctgan = "100"
 
 train_miss_data <- load_train_data(data_name, missingness_percentage, ctgan)
 

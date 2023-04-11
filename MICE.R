@@ -2,10 +2,10 @@
 ####################  0. Load packages and define variables needed ####################
 
 # Variables
-missingness = 0.1
+missingness = 0.3
 
 # Chosen data set: Choose from "letter", "credit", "news", "mushroom", "bank"
-data_name <- "mushroom"
+data_name <- "credit"
 
 # Chose if ctgan data should be used. Choose from "", "50" and "100"
 ctgan <- "50"
@@ -47,6 +47,7 @@ test_miss_data_x <- load_test_data(data_name, missingness_percentage)
 
 # Control
 head(test_miss_data_x)
+
 
 str(test_miss_data_x)
 summary(test_miss_data_x)
