@@ -5,10 +5,10 @@
 missingness = 0.3
 
 # Chosen data set: Choose from "letter", "credit", "news", "mushroom", "bank"
-data_name <- "credit"
+data_name <- "bank"
 
 # Chose if ctgan data should be used. Choose from "", "50" and "100"
-ctgan <- "50"
+ctgan <- "100"
 
 ####################  1. Data load and pre-processing - adapt data sets ####################
 
